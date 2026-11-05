@@ -36,5 +36,15 @@
         "Room"
       ]
     }
-  ]
+  ],
+  "keep_vars": true,
+  "secrets": {
+    "required": [
+      "SITE_PASSWORD"
+    ]
+  },
+  "build": {
+    "command": "node scripts/check-deploy-target.mjs",
+    "cwd": "."
+  }
 }

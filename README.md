@@ -19,6 +19,12 @@ The canonical application is in **`contextation-offering/contextation-offering/`
 
 The Worker name remains `contextation-offering`, its custom domain remains `offering.contextation.com`, and `assets.run_worker_first` stays enabled. Keep **`SITE_PASSWORD` as an encrypted Cloudflare runtime Secret**; its value belongs outside this repository. Existing presenter sign-in and sign-out routes are preserved.
 
+### One production Worker
+
+Only **`contextation-offering`** should build this repository. A second Cloudflare Worker named `course-offering-dsp-602` was also connected. Cloudflare can override the configured Worker name during a build, allowing two projects to compete for the same custom domain. The Wrangler build step now rejects that second target before deployment. Disconnect the duplicate's Git connection under **Settings → Builds** to stop its redundant build jobs; keep the original Worker's connection.
+
+All three Wrangler configurations require the `SITE_PASSWORD` binding before deployment and preserve existing dashboard variables with `keep_vars`. This does not restore a previously deleted value. If the original Worker reports a missing password, add `SITE_PASSWORD` under **contextation-offering → Settings → Variables and Secrets**, choose **Secret**, and deploy it. A build-time environment variable is not the same as a runtime Secret. The password value must never be committed here.
+
 Run the checks from the repository root:
 
 ```sh
