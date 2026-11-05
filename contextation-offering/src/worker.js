@@ -108,7 +108,7 @@ async function handle(request,env) {
   const url=new URL(request.url);
   if(url.protocol!=='https:') return response(null,308,{Location:`https://${url.host}${url.pathname}${url.search}`});
   const password=env.SITE_PASSWORD;
-  if(typeof password!=='string' || password.length<12 || password.length>256) return setupPage();
+if(typeof password!=='string' || password.length<9 || password.length>256) return setupPage();
   if(url.pathname===LOGIN && request.method==='POST') {
     if(request.headers.get('Origin')!==url.origin) return response('This request could not be accepted.',403);
     const form=await readForm(request);
