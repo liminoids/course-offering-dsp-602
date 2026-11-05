@@ -1,0 +1,57 @@
+# Course offering · DSP 602
+
+The website at **https://offering.contextation.com** has two views:
+
+- **`/`** — the password-protected projected map and presenter controls.
+- **`/join`** — the public participant form, usable on a phone or computer.
+
+The interface stays spare so the shared movement of the map, the arriving places, and the room's pauses carry the experience. Participants offer a local place, put their screens aside, then receive a hometown invitation when the presenter opens it.
+
+## Deployment
+
+Cloudflare is connected to this repository's `main` branch. The deploy command remains:
+
+```sh
+npx wrangler deploy
+```
+
+The canonical application is in **`contextation-offering/contextation-offering/`**. The repository-root and outer-folder Wrangler configurations now point to that same application. This supports the existing Cloudflare root-directory settings without accidentally publishing the older landing page.
+
+The Worker name remains `contextation-offering`, its custom domain remains `offering.contextation.com`, and `assets.run_worker_first` stays enabled. Keep **`SITE_PASSWORD` as an encrypted Cloudflare runtime Secret**; its value belongs outside this repository. Existing presenter sign-in and sign-out routes are preserved.
+
+Run the checks from the repository root:
+
+```sh
+npm run check
+```
+
+## What happens in class
+
+1. Participants open `/join`, optionally give a name, and choose a local place. An empty name is anonymous.
+2. After they submit, their screen confirms the place is held and invites them to look up.
+3. The presenter begins the local view and can pause or resume it.
+4. The presenter opens the hometown invitation. Participant screens update automatically while active.
+5. The presenter begins the wider view and closes the offering when ready.
+
+The presenter can enter a place for someone without a device. Resetting the room is a separate, explicit action.
+
+## Shared state
+
+The existing Cloudflare Durable Object binding, class, object name, and `v1` lifecycle migration remain in use. The new room protocol persists under **`room:v2`**. Deploying the update does not erase legacy pins. Runtime restarts and ordinary redeployments retain the new room; an explicit room reset removes its current contributions.
+
+Participant identity uses a random browser cookie. Public state contains that browser's own contribution and aggregate counts; the complete collection and presenter controls require the presenter session. Local places are restricted to about 40 miles of the Whitman starting point. Home/private selections use a generic neighborhood label and approximate coordinates instead of retaining the submitted address.
+
+## Editing
+
+Within the canonical application:
+
+- `dist/join.html`, `dist/join.js`: participant flow and short prompts.
+- `dist/index.html`, `dist/host.js`: projected view and facilitator controls.
+- `dist/app.css`: the restrained visual interface.
+- `dist/map.js`, `dist/map.css`: map selection, breathing, threads, and globe.
+- `src/worker.js`: password gate, API routing, and Durable Object integration.
+- Other `src/` modules: room rules, search, and configuration.
+
+Map imagery comes from OpenFreeMap, rendered by MapLibre GL JS. Live place search uses Photon. Internet access is required for geographic resources. A WebGL2-capable browser is needed for the 3D map; search and the presenter's text list remain available when rendering is unavailable. The visual map and projector should be rehearsed on the presentation computer before class.
+
+The earlier standalone Node example is a local development reference. Its `npm run dev` server is not the deployed Cloudflare runtime.

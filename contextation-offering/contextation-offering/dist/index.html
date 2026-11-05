@@ -2,36 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#f7f4fb">
-  <title>the wall</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/wall.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#faf8fb">
+  <title>The room · Offering</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/map.css">
+  <script type="module" src="/host.js"></script>
 </head>
-<body>
-<div id="map" aria-label="map"></div>
-<div class="hud">
-  <div class="count" id="count">waiting for the room</div>
-  <div class="caption" id="caption" aria-live="polite">
-    <div class="name" id="capName"></div>
-    <div class="who" id="capWho"></div>
-  </div>
-  <div class="hint" id="hint"><kbd>→</kbd> next thread &nbsp;&nbsp; <kbd>h</kbd> hometown &nbsp;&nbsp; <kbd>p</kbd> play &nbsp;&nbsp; <kbd>e</kbd> type places &nbsp;&nbsp; <kbd>x</kbd> clear room &nbsp;&nbsp; <kbd>r</kbd> restart</div>
-  <div class="panel" id="panel" hidden>
-    <div class="title">places, one per line</div>
-    <div class="small">“name: place” or just “place” — for when a phone can’t. press e to hide this</div>
-    <label for="inLocal">here, around Syracuse</label>
-    <textarea id="inLocal" placeholder="Diva: Thornden Park&#10;Recess coffee&#10;Westcott"></textarea>
-    <label for="inHome">hometowns — town, state or country</label>
-    <textarea id="inHome" placeholder="Diva: Fairfax, Virginia&#10;Seoul"></textarea>
-    <div class="row"><button id="apply" type="button">add these</button><span class="status" id="status"></span></div>
-  </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js"></script>
-<script src="/wall.js"></script>
+<body class="host-page">
+  <a class="skip-link" href="#host-controls">Skip to presenter controls</a>
+  <main class="host-stage" aria-label="The shared room">
+    <h1 class="sr-only">The room</h1>
+    <div id="presentation-map" class="presentation-map" aria-label="Shared map of contributed places"></div>
+    <header class="room-status" aria-live="polite"><span id="room-phase">Connecting…</span><span id="ready-count"></span><span id="example-note" hidden>Example places</span></header>
+    <p id="map-status" class="sr-only" role="status"></p>
+    <p id="host-error" class="host-error" role="alert" hidden></p>
+    <section id="place-list-panel" class="place-list-panel" aria-labelledby="place-list-title" hidden><div class="panel-heading"><h2 id="place-list-title">Places</h2><button id="close-place-list" class="text-button" type="button" aria-label="Close place list">Close</button></div><ul id="place-list" class="place-list"></ul></section>
+    <div id="control-status" class="control-status" role="status" aria-live="polite"></div>
+    <nav id="host-controls" class="control-bar" aria-label="Presenter controls"><button id="primary-control" class="primary" type="button" disabled>Begin</button><button id="pause-control" type="button" hidden>Pause</button><button id="more-toggle" type="button" aria-expanded="false" aria-controls="more-panel">More</button><button id="hide-controls" class="text-button" type="button" title="Hide controls (H)">Hide</button></nav>
+    <button id="show-controls" class="show-controls" type="button" title="Show controls (H)" hidden>Controls</button>
+    <aside id="more-panel" class="more-panel" aria-label="More controls" hidden>
+      <a id="participant-link" href="/join" target="_blank" rel="noopener">Open participant view</a>
+      <button id="copy-link" type="button">Copy participant link</button>
+      <button id="add-place-control" type="button" disabled>Add a place for someone</button>
+      <button id="list-control" type="button" aria-expanded="false" aria-controls="place-list-panel">Show places</button>
+      <button id="fullscreen-control" type="button">Full screen</button>
+      <button id="reset-control" type="button">Clear room</button>
+      <form method="post" action="/_gate/logout"><button type="submit">Sign out</button></form>
+      <p id="key-hints" class="caption">Space · pause<br>H · controls &nbsp; F · full screen</p>
+    </aside>
+  </main>
+  <dialog id="reset-dialog" aria-labelledby="reset-title"><form method="dialog"><h2 id="reset-title">Clear this room?</h2><p>All current contributions will be removed. Everyone returns to the first invitation.</p><div class="form-actions"><button value="cancel">Keep the room</button><button id="confirm-reset" class="primary" value="clear">Clear room</button></div></form></dialog>
+  <dialog id="add-place-dialog" aria-labelledby="assisted-title">
+    <div class="panel-heading"><h2 id="assisted-title">Add a place</h2><button id="close-add-place" class="text-button" type="button">Close</button></div>
+    <p id="assisted-note" class="caption">Confirm it with the participant. If projected, use a neighborhood for a home.</p>
+    <p id="assisted-closed" class="error" role="status" hidden></p>
+    <label for="assisted-name">Their name <span class="optional">(optional)</span></label><input id="assisted-name" type="text" maxlength="40" autocomplete="off" placeholder="Leave blank for anonymous">
+    <form id="assisted-search-form" class="assisted-search" role="search"><label id="assisted-search-label" for="assisted-search">Place</label><div class="search-row"><input id="assisted-search" type="search" maxlength="120" autocomplete="off" placeholder="Place name or neighborhood"><button id="assisted-search-button" type="submit">Search</button></div></form>
+    <p id="assisted-search-status" class="caption" role="status" aria-live="polite"></p><ul id="assisted-results" class="search-results" aria-label="Matching places"></ul>
+    <section id="assisted-review" class="review" hidden aria-label="Review the contribution">
+      <label id="assisted-home-option" class="check-row"><input id="assisted-home" type="checkbox"><span>This is a home or private address.</span></label>
+      <label for="assisted-label">Label on the map</label><input id="assisted-label" type="text" maxlength="120">
+      <p id="assisted-details" class="caption"></p>
+      <label class="check-row consent-row"><input id="assisted-consent" type="checkbox"><span>They’re okay sharing this place and name with the room.</span></label>
+      <button id="submit-assisted" class="primary" type="button">Add</button>
+    </section>
+    <p id="assisted-error" class="error" role="alert"></p>
+  </dialog>
+  <noscript><p class="host-error">JavaScript is needed to display the shared map.</p></noscript>
 </body>
 </html>

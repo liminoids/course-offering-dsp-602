@@ -1,10 +1,10 @@
 {
   "name": "contextation-offering",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tests/gate.mjs",
+    "check": "node tests/gate.mjs && node tests/room.mjs",
     "deploy": "npm run check && wrangler deploy",
     "dev": "npm run check && wrangler dev --local-protocol https"
   },

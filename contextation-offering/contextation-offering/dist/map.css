@@ -1,0 +1,30 @@
+/* Quiet map controls. Attribution and keyboard access stay visible. */
+.offering-map-root{position:relative;isolation:isolate;overflow:hidden;background:#f1edf4;color:#493a52;min-width:0}
+.offering-map--selection{min-height:280px;border-radius:8px;border:1px solid #d8cddd}
+.offering-map--presentation{position:absolute;inset:0;min-height:0;width:100%;height:100%}
+.offering-map-canvas{position:absolute;inset:0;min-width:0;min-height:0}
+.offering-map-message{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;font-family:inherit}
+.offering-map-message[hidden]{display:none!important}
+.offering-map-message-title{font:600 14px/1.5 system-ui,sans-serif;margin:0;letter-spacing:0;color:#493a52}
+.offering-map-message-detail{font:13px/1.5 system-ui,sans-serif;max-width:34ch;margin:0;color:#65576e}
+.offering-map-message-detail:empty{display:none}
+.offering-map-retry,.offering-map-center-button{font:500 12px/1.4 system-ui,sans-serif;color:#51365c;background:#fffdfb;border:1px solid #c8b8d1;border-radius:6px;padding:10px 13px;cursor:pointer;min-height:42px}
+.offering-map-retry{margin-top:4px}
+.offering-map-retry:hover,.offering-map-center-button:hover{background:#f3edf7;border-color:#9776a8}
+.offering-map-retry:focus-visible,.offering-map-center-button:focus-visible{outline:3px solid #9472a5;outline-offset:3px}
+.offering-map-retry[hidden]{display:none!important}
+.offering-map-center-button{position:absolute;z-index:2;left:12px;bottom:37px}
+.offering-map--unavailable .offering-map-center-button{display:none}
+.offering-selection-marker{width:17px;height:17px;border-radius:50%;background:#865c91;border:3px solid #fff9fc;box-shadow:0 0 0 6px #9b72ac35;pointer-events:none}
+.offering-map-root .maplibregl-canvas{outline-offset:-4px}
+.offering-map-root .maplibregl-canvas:focus-visible{outline:3px solid #9472a5}
+.offering-map-root .maplibregl-ctrl-attrib{max-width:calc(100vw - 20px);font:10px/1.6 system-ui,sans-serif!important;background:#fffafce8!important;color:#5c5261!important;border-radius:3px 0 0 0;padding:2px 6px!important}
+.offering-map-root .maplibregl-ctrl-attrib a{color:#53485b!important;text-decoration:underline;text-underline-offset:2px}
+.offering-map-root .maplibregl-ctrl-bottom-right{z-index:4}
+.offering-map-root .maplibregl-ctrl-group{border:1px solid #c8b8d1;border-radius:6px;overflow:hidden;box-shadow:none}
+.offering-map-root .maplibregl-ctrl-group button{background:#fffdfb;min-height:36px;min-width:36px}
+.offering-map-root .maplibregl-ctrl-group button:hover{background:#f3edf7}
+.offering-map-root .maplibregl-ctrl-group button+button{border-top-color:#d8cddd}
+.offering-map--presentation .offering-map-message{inset:auto 16px 96px auto;width:min(310px,calc(100% - 32px));align-items:flex-start;padding:13px 15px;text-align:left;background:#fffdfbef;border:1px solid #d8cddd;border-radius:8px}
+@media(max-width:600px){.offering-map--selection{min-height:250px}.offering-map-center-button{left:10px;bottom:41px}.offering-map-root .maplibregl-ctrl-attrib{max-width:calc(100vw - 40px)}.offering-map--presentation .offering-map-message{bottom:108px}}
+@media(prefers-reduced-motion:reduce){.offering-selection-marker{transition:none}.offering-map-root *{scroll-behavior:auto}}

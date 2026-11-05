@@ -123,6 +123,7 @@ function memoryRoom(){
     get:async k=>store.get(k),
     put:async (k,v)=>{ if(typeof k==='object'){for(const [kk,vv] of Object.entries(k)) store.set(kk,vv);} else store.set(k,v); },
     list:async ({prefix=''}={})=>new Map([...store.entries()].filter(([k])=>k.startsWith(prefix)).sort(([a],[b])=>a<b?-1:a>b?1:0)),
+    delete:async keys=>Array.isArray(keys)?keys.reduce((count,key)=>count+Number(store.delete(key)),0):store.delete(keys),
     deleteAll:async ()=>store.clear(),
   };
   const object=new Room({storage});

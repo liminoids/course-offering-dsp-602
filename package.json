@@ -1,0 +1,14 @@
+{
+  "name": "contextation-offering-root",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm --prefix ./contextation-offering/contextation-offering run check",
+    "deploy": "npm run check && wrangler deploy",
+    "dev": "wrangler dev --local-protocol https"
+  },
+  "devDependencies": {
+    "wrangler": "4.111.0"
+  }
+}

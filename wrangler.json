@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "contextation-offering",
+  "main": "./contextation-offering/contextation-offering/src/worker.js",
+  "compatibility_date": "2026-07-10",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./contextation-offering/contextation-offering/dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "routes": [
+    {
+      "pattern": "offering.contextation.com",
+      "custom_domain": true
+    }
+  ],
+  "send_metrics": false,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ROOM",
+        "class_name": "Room"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "Room"
+      ]
+    }
+  ]
+}
