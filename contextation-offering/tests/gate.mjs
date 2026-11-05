@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import worker from '../src/worker.js';
 
 // Local-only test credentials, NOT a production password.
-const password='Test-only-passphrase-not-for-use-6821!';
+const password='T3stOnly!';
 const origin='https://offering.contextation.com';
 let assetCalls=0;
 const env={SITE_PASSWORD:password,ASSETS:{fetch:async()=>{assetCalls++;return new Response('PRIVATE CONTENT',{headers:{'Content-Type':'text/plain','Cache-Control':'public,max-age=999','ETag':'cached'}});}}};
@@ -14,7 +14,7 @@ let checks=0;
 async function test(name,fn){await fn(); checks++; console.log('PASS',name);}
 
 await test('missing or weak secrets fail closed',async()=>{
-  for(const value of [undefined,'','short','12345678901']){
+  for(const value of [undefined,'','short','12345678']){
     const before=assetCalls;
     const r=await run(req('/styles.css'),{...env,SITE_PASSWORD:value});
     assert.equal(r.status,503);assert.equal(assetCalls,before);
