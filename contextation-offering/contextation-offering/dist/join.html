@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f7f4fb">
+  <title>a place you love here</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/join.css">
+</head>
+<body>
+<main>
+  <div class="dot" aria-hidden="true"></div>
+
+  <section id="step1">
+    <h1>a place you love here</h1>
+    <p class="small">where you live, or somewhere you go — a coffee shop, a park, a place to eat. it goes on the wall for the room.</p>
+    <label for="q">find it</label>
+    <div class="search">
+      <input id="q" type="search" autocomplete="off" placeholder="type a place name" enterkeyhint="search">
+      <ul id="suggest" class="suggest" hidden></ul>
+    </div>
+    <div id="map" aria-label="map of Syracuse"></div>
+    <p class="small">or tap the map and the pin lands where you touched.</p>
+    <label for="who">your name, if you want it on the wall</label>
+    <input id="who" type="text" maxlength="40" autocomplete="given-name">
+    <p class="chosen" id="chosen" aria-live="polite">nothing chosen yet</p>
+    <button id="send1" type="button" disabled>hold this place</button>
+    <p class="note" id="note1" role="alert"></p>
+  </section>
+
+  <section id="done1" hidden>
+    <h1>held.</h1>
+    <p class="big">look up.</p>
+    <p class="small">at the end of class, come back here for where you came from.</p>
+    <button id="toHome" type="button">where you came from</button>
+    <p class="small"><a href="#" id="again1">start over</a></p>
+  </section>
+
+  <section id="step2" hidden>
+    <h1>where you came from</h1>
+    <p class="small">a town with its state or country helps it find the right one.</p>
+    <label for="q2">find it</label>
+    <div class="search">
+      <input id="q2" type="search" autocomplete="off" placeholder="town, state or country" enterkeyhint="search">
+      <ul id="suggest2" class="suggest" hidden></ul>
+    </div>
+    <label for="who2">your name, if you want it on the wall</label>
+    <input id="who2" type="text" maxlength="40" autocomplete="given-name">
+    <p class="chosen" id="chosen2" aria-live="polite">nothing chosen yet</p>
+    <button id="send2" type="button" disabled>hold this place</button>
+    <p class="note" id="note2" role="alert"></p>
+  </section>
+
+  <section id="done2" hidden>
+    <h1>held.</h1>
+    <p class="big">look up.</p>
+    <p class="small"><a href="#" id="again2">start over</a></p>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js"></script>
+<script src="/join.js"></script>
+</body>
+</html>

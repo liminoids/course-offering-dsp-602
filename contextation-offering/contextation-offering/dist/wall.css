@@ -1,0 +1,41 @@
+:root {
+  --paper: #f7f4fb;
+  --plum: #5e4d6e;
+  --plum-soft: #8b7a9c;
+  --pill: rgba(255, 255, 255, .74);
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; background: var(--paper); color: var(--plum);
+  font-family: Nunito, ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+#map { position: fixed; inset: 0; }
+.hud { position: fixed; inset: 0; pointer-events: none; font-size: clamp(14px, 1.3vw, 18px); }
+.count { position: absolute; top: 1.2rem; right: 1.2rem; background: var(--pill); backdrop-filter: blur(8px);
+  border-radius: 999px; padding: .45rem 1rem; font-weight: 600; box-shadow: 0 2px 12px rgba(94, 77, 110, .08); }
+.count a { color: var(--plum); pointer-events: auto; }
+.caption { position: absolute; left: 1.6rem; bottom: 1.6rem; max-width: min(60vw, 36rem);
+  opacity: 0; transform: translateY(6px); transition: opacity .9s ease, transform .9s ease; }
+.caption.show { opacity: 1; transform: none; }
+.caption .name { font-size: clamp(1.6rem, 3.2vw, 2.6rem); font-weight: 600; line-height: 1.15; letter-spacing: -.01em; }
+.caption .who { margin-top: .25rem; color: var(--plum-soft); font-size: 1.05em; }
+.hint { position: absolute; right: 1.2rem; bottom: 1.2rem; background: var(--pill); backdrop-filter: blur(8px);
+  border-radius: 999px; padding: .45rem 1rem; color: var(--plum-soft); transition: opacity 1.2s ease; }
+.hint.gone { opacity: 0; }
+.hint kbd { font: inherit; font-weight: 600; color: var(--plum); }
+.panel { position: absolute; top: 1.2rem; left: 1.2rem; width: min(26rem, calc(100vw - 2.4rem)); pointer-events: auto;
+  background: rgba(255, 255, 255, .86); backdrop-filter: blur(10px); border-radius: 1.2rem; padding: 1rem 1.1rem 1.1rem;
+  box-shadow: 0 4px 24px rgba(94, 77, 110, .12); display: flex; flex-direction: column; gap: .5rem; }
+.panel[hidden] { display: none; }
+.panel .title { font-weight: 600; }
+.panel .small { color: var(--plum-soft); font-size: .9em; }
+.panel label { font-weight: 600; margin-top: .2rem; }
+.panel textarea { font: inherit; color: var(--plum); border: 1px solid #e3dced; border-radius: .7rem; padding: .5rem .65rem;
+  background: #fff; resize: vertical; min-height: 5.5em; }
+.panel textarea:focus { outline: 2px solid #d9c9ff; border-color: transparent; }
+.panel .row { display: flex; align-items: center; gap: .8rem; margin-top: .2rem; }
+.panel button { font: inherit; font-weight: 600; color: var(--plum); background: #e5dcff; border: 0; border-radius: 999px;
+  padding: .5rem 1.1rem; cursor: pointer; }
+.panel button:disabled { opacity: .55; cursor: wait; }
+.panel button:focus-visible { outline: 2px solid var(--plum-soft); outline-offset: 2px; }
+.panel .status { color: var(--plum-soft); font-size: .9em; }
+.maplibregl-ctrl-attrib { font-family: inherit; background: rgba(255, 255, 255, .55) !important; }
+@media (prefers-reduced-motion: reduce) { .caption, .hint { transition: none; } }

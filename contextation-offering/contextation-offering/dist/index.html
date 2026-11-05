@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f7f4fb">
+  <title>the wall</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div id="map" aria-label="map"></div>
+<div class="hud">
+  <div class="count" id="count">waiting for the room</div>
+  <div class="caption" id="caption" aria-live="polite">
+    <div class="name" id="capName"></div>
+    <div class="who" id="capWho"></div>
+  </div>
+  <div class="hint" id="hint"><kbd>→</kbd> next thread &nbsp;&nbsp; <kbd>h</kbd> hometown &nbsp;&nbsp; <kbd>p</kbd> play &nbsp;&nbsp; <kbd>e</kbd> type places &nbsp;&nbsp; <kbd>x</kbd> clear room &nbsp;&nbsp; <kbd>r</kbd> restart</div>
+  <div class="panel" id="panel" hidden>
+    <div class="title">places, one per line</div>
+    <div class="small">“name: place” or just “place” — for when a phone can’t. press e to hide this</div>
+    <label for="inLocal">here, around Syracuse</label>
+    <textarea id="inLocal" placeholder="Diva: Thornden Park&#10;Recess coffee&#10;Westcott"></textarea>
+    <label for="inHome">hometowns — town, state or country</label>
+    <textarea id="inHome" placeholder="Diva: Fairfax, Virginia&#10;Seoul"></textarea>
+    <div class="row"><button id="apply" type="button">add these</button><span class="status" id="status"></span></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js"></script>
+<script src="/wall.js"></script>
+</body>
+</html>
