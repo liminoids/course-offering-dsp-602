@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f1f8">
+  <title>the room · offering</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/v2/wall.css"><script type="module" src="/v2/wall.js"></script>
+</head>
+<body class="wall-page">
+  <a class="skip-link" href="#transport">skip to controls</a>
+  <main id="room" class="room-shell">
+    <aside id="member-rail" class="member-rail" aria-labelledby="rail-title">
+      <header class="rail-heading"><h1 id="rail-title">the room</h1><button id="hide-rail" class="quiet-button" type="button" aria-label="hide participants">hide</button></header>
+      <p id="member-summary" class="rail-summary" aria-live="polite">waiting for the room</p>
+      <ol id="member-list" class="member-list" aria-label="participants and their shared places"></ol>
+      <p class="rail-footnote">the people and places gathered here</p>
+    </aside>
+    <section id="wall-stage" class="wall-stage" aria-label="the shared geographic view">
+      <div id="presentation-map" class="presentation-map"></div>
+      <header class="wall-header">
+        <div class="wall-title"><div class="round-line"><button id="show-rail" class="quiet-button" type="button" aria-controls="member-rail" aria-expanded="true" hidden>people</button><span id="round-label">nearby</span></div><p id="room-caption">connecting to the room</p></div>
+        <div class="map-modes" role="group" aria-label="map appearance"><button type="button" data-mode="quiet" aria-pressed="true">quiet</button><button type="button" data-mode="detail" aria-pressed="false">detail</button><button type="button" data-mode="aerial" aria-pressed="false" disabled aria-label="aerial map, unavailable">aerial</button></div>
+      </header>
+      <p id="map-feedback" class="map-feedback" role="status" hidden></p>
+      <div id="connection-error" class="connection-error" role="alert" hidden><span id="connection-message"></span><button id="retry-connection" class="quiet-button" type="button">try again</button></div>
+      <section id="place-inspector" class="place-inspector" aria-labelledby="inspector-place" hidden><button id="return-room" class="quiet-button" type="button">return to the room</button><p id="inspector-person" class="inspector-person"></p><h2 id="inspector-place"></h2><p id="inspector-locality"></p><p id="inspector-precision" class="inspector-precision"></p><p id="inspector-other" class="inspector-other" hidden></p></section>
+      <div id="transport" class="transport-wrap">
+        <nav class="transport" aria-label="shared view controls">
+          <button id="play-control" class="play-control" type="button" disabled><span class="play-dot" aria-hidden="true"></span><span id="play-label">begin</span></button>
+          <div class="progress-block"><label for="shared-progress" class="progress-label"><span id="progress-from">the room</span><span id="progress-state">held</span><span id="progress-to">nearby</span></label><input id="shared-progress" class="shared-progress" type="range" min="0" max="1000" step="1" value="0" disabled aria-label="position in the shared view"></div>
+          <button id="round-control" class="round-control" type="button" disabled>invite hometowns</button>
+          <button id="more-control" class="quiet-button" type="button" aria-expanded="false" aria-controls="more-panel">more</button>
+        </nav>
+        <p id="control-message" class="control-message" role="status" aria-live="polite"></p>
+      </div>
+      <button id="show-controls" class="show-controls" type="button" hidden>controls</button>
+      <aside id="more-panel" class="more-panel" hidden aria-label="more presenter controls">
+        <a id="join-link" href="/v2/join" target="_blank" rel="noopener">open participant view</a>
+        <button id="copy-link" type="button">copy participant link</button><button id="add-person" type="button" disabled>add a place for someone</button><button id="demo-control" type="button" hidden>rehearse with example places</button>
+        <button id="replay-control" type="button" hidden>replay this shared view</button><button id="fullscreen-control" type="button">full screen</button><button id="hide-controls" type="button">hide presentation controls</button><button id="reset-control" type="button">clear this room</button>
+        <a href="/">open the original offering</a><form method="post" action="/_gate/logout"><button type="submit">sign out</button></form>
+        <p class="key-hint">space · hold or continue<br>h · presentation controls</p>
+      </aside>
+      <p id="wall-announcement" class="sr-only" aria-live="polite"></p>
+    </section>
+  </main>
+  <dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">clear this room?</h2><p>Everyone’s name and places in this room will be removed. Phones return to the first invitation.</p><div class="dialog-actions"><button id="cancel-reset" type="button">keep the room</button><button id="confirm-reset" class="solid-button" type="button">clear room</button></div></dialog>
+  <dialog id="assisted-dialog" aria-labelledby="assisted-title">
+    <div class="dialog-heading"><h2 id="assisted-title">a place for someone</h2><button id="close-assisted" class="quiet-button" type="button">close</button></div>
+    <p class="small-copy">Confirm the place with them. Use a neighborhood if you are projecting a home search.</p><p id="assisted-closed" class="error-copy" role="status" hidden></p>
+    <label for="assisted-name">their name <span class="optional">optional</span></label><input id="assisted-name" type="text" maxlength="40" autocomplete="off" placeholder="leave blank for anonymous">
+    <div class="assisted-search" role="search"><label for="assisted-query" id="assisted-search-label">a nearby place</label><div class="search-row"><input id="assisted-query" type="search" maxlength="120" autocomplete="off"><button id="assisted-search-button" type="button">find</button></div></div>
+    <p id="assisted-search-status" class="small-copy" role="status"></p><ul id="assisted-results" class="search-results"></ul>
+    <section id="assisted-review" class="assisted-review" hidden><label id="assisted-home-option" class="check-row"><input id="assisted-home" type="checkbox"><span>this is a home or private address</span></label><label for="assisted-label">label on the map</label><input id="assisted-label" type="text" maxlength="160"><p id="assisted-detail" class="small-copy"></p><label class="check-row"><input id="assisted-consent" type="checkbox"><span>they’re okay sharing this place and name with the room</span></label><button id="submit-assisted" class="solid-button" type="button">share this place</button></section>
+    <p id="assisted-error" class="error-copy" role="alert"></p>
+  </dialog>
+  <noscript><p class="no-script">JavaScript is needed for the shared view.</p></noscript>
+</body>
+</html>

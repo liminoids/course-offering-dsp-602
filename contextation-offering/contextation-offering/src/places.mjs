@@ -113,11 +113,13 @@ function formatPhoton(feature, query, round) {
 }
 
 export class PlaceSearch {
-  constructor(config, { fetchImpl = globalThis.fetch, now = Date.now, timeoutMs = 8000 } = {}) {
+  constructor(config, { fetchImpl = globalThis.fetch, now = Date.now, timeoutMs = 8000, formatFeature = formatPhoton, tidy = tidyPlaces } = {}) {
     this.config = config;
     this.fetch = fetchImpl;
     this.now = now;
     this.timeoutMs = timeoutMs;
+    this.formatFeature = formatFeature;
+    this.tidy = tidy;
     this.cache = new Map();
     this.pending = new Map();
   }
@@ -172,7 +174,7 @@ export class PlaceSearch {
       const body = await response.json();
       if (!Array.isArray(body.features)) throw new Error('Invalid search response');
       return {
-        results: tidyPlaces(body.features.map((feature) => formatPhoton(feature, query, round)).filter(Boolean), query, round, this.config),
+        results: this.tidy(body.features.map((feature) => this.formatFeature(feature, query, round)).filter(Boolean), query, round, this.config),
         source: 'photon',
       };
     } catch {

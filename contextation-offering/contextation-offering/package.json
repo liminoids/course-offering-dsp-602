@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tests/gate.mjs && node tests/room.mjs && node tests/deployment.mjs",
+    "check": "node tests/gate.mjs && node tests/room.mjs && node tests/relational.mjs && node tests/deployment.mjs",
     "deploy": "npm run check && wrangler deploy",
     "dev": "npm run check && wrangler dev --local-protocol https"
   },

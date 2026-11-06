@@ -1,0 +1,19 @@
+.v2-map-root{position:relative;isolation:isolate;overflow:hidden;background:#f3eff7;min-height:220px;color:#55445f}
+.v2-map-base,.v2-map-ink{position:absolute;inset:0;width:100%;height:100%}
+.v2-map-base{z-index:0;transition:opacity .8s ease;background:#f3eff7}
+.v2-map-base>.ol-viewport,.v2-map-base>.maplibregl-map{width:100%;height:100%}
+.v2-map-ink{z-index:2;pointer-events:none;display:block}
+.v2-map-vignette{position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at 48% 48%,transparent 42%,rgba(247,244,250,.2) 79%,rgba(247,244,250,.48) 100%)}
+.v2-map-message{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(84%,26rem);padding:1rem 1.3rem;border:1px solid #ded4e7;border-radius:1rem;background:rgba(250,247,253,.93);box-shadow:0 10px 40px #4631520b;font:400 .9rem/1.6 Nunito,system-ui,sans-serif;text-align:center}
+.v2-map-message p{margin:0}.v2-map-message button{margin:.65rem 0 0;border:1px solid #b6a5c4;background:transparent;color:inherit;border-radius:3rem;padding:.55rem 1rem;font:inherit;min-height:44px;cursor:pointer}
+.v2-map-message[hidden]{display:none}.v2-map-message[data-state="notice"]{top:auto;bottom:4rem;transform:translateX(-50%);font-size:.8rem;padding:.55rem .9rem}
+.v2-map-attribution{position:absolute;right:.8rem;bottom:.5rem;max-width:calc(100% - 1.6rem);z-index:6;padding:.2rem .35rem;border-radius:.3rem;background:#faf7fce6;color:#695b73;font:400 10px/1.4 Nunito,system-ui,sans-serif;pointer-events:auto;text-align:right}
+.v2-map-attribution a{color:inherit;text-decoration:none}.v2-map-attribution a:hover{text-decoration:underline}
+.v2-map-attribution--stage{z-index:7;bottom:5px;font-size:10px;background:#faf7fcf2}
+.v2-map-credits-host .transport-wrap{padding-bottom:max(28px,calc(var(--v2-map-credit-height,18px) + 12px))}
+.v2-map-credits-host .show-controls{bottom:max(24px,calc(var(--v2-map-credit-height,18px) + 12px))}
+.v2-map-attribution a:focus-visible,.v2-map-message button:focus-visible{outline:2px solid #6a4c7d;outline-offset:3px}
+.v2-map-root .maplibregl-control-container,.v2-map-root .ol-overlaycontainer-stopevent{display:none}
+.v2-selection-map .offering-map-message,.v2-selection-map .offering2d-message{font-family:Nunito,system-ui,sans-serif}
+.v2-selection-map .offering2d-basemap{filter:saturate(.65)}
+@media(prefers-reduced-motion:reduce){.v2-map-base{transition:none}}

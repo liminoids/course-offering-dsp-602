@@ -3,6 +3,8 @@
 // IMPORTANT: assets.run_worker_first must remain true to protect all static assets.
 
 import { Room as RoomModel } from './room.mjs';
+import { RelationalRoom } from './relational-room.mjs';
+import { RelationalPlaceSearch, signPlace, verifiedPlace } from './relational-places.mjs';
 import { DEFAULT_CONFIG, validateConfig } from './config.mjs';
 import { PlaceSearch, examplePlaces } from './places.mjs';
 import { HttpError } from './errors.mjs';
@@ -16,14 +18,27 @@ const CONFIG = { ...validateConfig(DEFAULT_CONFIG), release: 'bare-v2-2026-11-05
 const PARTICIPANT_COOKIE = '__Host-offering_participant';
 const PARTICIPANT_SECONDS = 24 * 60 * 60;
 const ROOM_STATE_KEY = 'room:v2';
+const RELATIONAL_STATE_KEY = 'room:relational:v1';
+const RELATIONAL_CONFIG = {
+  ...CONFIG, release: 'relational-v2-2026-11-06',
+  imagery: {
+    enabled: true, name: 'NYS aerial', attribution: 'NYS ITS Geospatial Services',
+    yearLabel: 'NYS imagery · 2022–2025',
+    tileUrl: 'https://orthos.its.ny.gov/arcgis/rest/services/wms/Latest/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image',
+    maxZoom: 19, bounds: [-76.93, 42.46, -75.34, 43.63],
+  },
+};
 const BODY_LIMIT = 8192;
 
 // The join page (what classmates open on their phones) and the API it needs are open;
 // the wall at / and everything else stay behind the password.
 const PUBLIC = new Set(['/join', '/join/', '/join.html', '/join.js', '/join.css', '/app.css', '/client.js', '/map.js', '/map.css', '/map2d.js', '/map2d.css', '/vector-basemap.js', '/vendor/leaflet.js', '/vendor/leaflet.css', '/vendor/vector-map.js', '/vendor/ol.css']);
+for (const path of ['/v2/join', '/v2/join/', '/v2/join.html', '/v2/join.js', '/v2/join.css', '/v2/client.js', '/v2/map.js', '/v2/map.css', '/v2/map-land.json', '/v2/map-geo.js', '/v2/map-geo.LICENSE', '/v2/map-aerial.js']) PUBLIC.add(path);
 // Pages that draw a map need the map library, its tiles, and the fonts; nothing else is loosened.
 const MAP_PAGES = new Set(['/', '/index.html', '/host', '/host/', '/host.html', '/join', '/join/', '/join.html']);
+const RELATIONAL_MAP_PAGES = new Set(['/v2', '/v2/', '/v2/index.html', '/v2/join', '/v2/join/', '/v2/join.html']);
 const MAP_CSP = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org https://unpkg.com; worker-src 'self' blob:; child-src blob:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+const RELATIONAL_MAP_CSP = MAP_CSP.replace("img-src 'self' data: blob:", "img-src 'self' data: blob: https://orthos.its.ny.gov").replace("connect-src 'self'", "connect-src 'self' https://orthos.its.ny.gov");
 const KINDS = new Set(['home', 'food', 'coffee', 'park']);
 const MAX_PINS = 400;
 const SOURCE_FILES = /^\/(?:_worker\.js|_routes\.json|_headers|wrangler\.(?:jsonc?|toml)|package(?:-lock)?\.json|src|tests|\.git|\.dev\.vars|\.env)(?:\/|$)/i;
@@ -50,6 +65,7 @@ const participantSearches = new RateLimit(40, 60000);
 const upstreamSearches = new RateLimit(120, 60000);
 const submissions = new RateLimit(30, 60000);
 const search = new PlaceSearch(CONFIG, { fetchImpl: (...args) => fetch(...args) });
+const relationalSearch = new RelationalPlaceSearch(RELATIONAL_CONFIG, { fetchImpl: (...args) => fetch(...args) });
 
 const BASE_HEADERS = {
   'Cache-Control': 'private, no-store, max-age=0',
@@ -91,7 +107,8 @@ function page(title, content, status = 200) {
   });
 }
 function loginPage(next, error = '', status = 200) {
-  return page('the wall', `<h1>the wall</h1><p>This screen is for the room. Phones go to <code>/join</code>.</p>${error ? `<p class="error" role="alert">${escapeHTML(error)}</p>` : ''}<form method="post" action="${LOGIN}"><input type="hidden" name="next" value="${escapeHTML(next)}"><label for="password">password</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus maxlength="256"><button type="submit">open</button></form>`, status);
+  const joinPath = next.startsWith('/v2') ? '/v2/join' : '/join';
+  return page('the wall', `<h1>the wall</h1><p>This screen is for the room. Phones go to <code>${joinPath}</code>.</p>${error ? `<p class="error" role="alert">${escapeHTML(error)}</p>` : ''}<form method="post" action="${LOGIN}"><input type="hidden" name="next" value="${escapeHTML(next)}"><label for="password">password</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus maxlength="256"><button type="submit">open</button></form>`, status);
 }
 function setupPage() {
   return page('not open yet', `<h1>not open yet</h1><p>The owner needs to set the encrypted <code>SITE_PASSWORD</code> secret in Cloudflare and deploy again.</p>`, 503);
@@ -152,6 +169,7 @@ async function handle(request,env) {
   if(url.protocol!=='https:') return response(null,308,{Location:`https://${url.host}${url.pathname}${url.search}`});
   const password=env.SITE_PASSWORD;
 if(typeof password!=='string' || password.length<9 || password.length>256) return setupPage();
+  if(url.pathname.startsWith('/api/v2/')) return relationalApi(request,env,url,password);
   if(url.pathname.startsWith('/api/')) return api(request,env,url,password);
   if(PUBLIC.has(url.pathname)) {
     if(request.method!=='GET' && request.method!=='HEAD') return response('Method not allowed.',405,{Allow:'GET, HEAD'});
@@ -191,12 +209,15 @@ async function serveAsset(request,env,url) {
   let assetRequest=request;
   if(['/host','/host/','/host.html'].includes(url.pathname)) assetRequest=new Request(new URL('/',url),request);
   else if(url.pathname==='/join/') assetRequest=new Request(new URL('/join',url),request);
+  else if(['/v2','/v2/'].includes(url.pathname)) assetRequest=new Request(new URL('/v2/',url),request);
+  else if(['/v2/join','/v2/join/'].includes(url.pathname)) assetRequest=new Request(new URL('/v2/join',url),request);
   const asset=await env.ASSETS.fetch(assetRequest);
   const headers=new Headers(asset.headers);
   for(const [name,value] of Object.entries(BASE_HEADERS)) headers.set(name,value);
   if(MAP_PAGES.has(url.pathname)) {
     headers.set('Content-Security-Policy',MAP_CSP);
   }
+  if(RELATIONAL_MAP_PAGES.has(url.pathname)) headers.set('Content-Security-Policy',RELATIONAL_MAP_CSP);
   headers.delete('ETag');headers.delete('Last-Modified');
   return new Response(asset.body,{status:asset.status,statusText:asset.statusText,headers});
 }
@@ -360,6 +381,66 @@ async function api(request,env,url,password) {
   }
 }
 
+// Opt-in experiment. The existing routes and room instance remain untouched.
+async function relationalApi(request,env,url,password) {
+  let identity=null;
+  const reply=(data,status=200)=>json(data,status,identity?.cookie?{'Set-Cookie':identity.cookie}:{});
+  const forward=async(action,payload)=>{
+    const object=env.ROOM.get(env.ROOM.idFromName('class-relational-v2'));
+    const result=await object.fetch(`https://room/relational/${action}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
+    });
+    return reply(await result.json(),result.status);
+  };
+  try {
+    const path=url.pathname.slice('/api/v2'.length);
+    if(['POST','PUT','PATCH','DELETE'].includes(request.method)&&request.headers.get('Origin')!==url.origin) {
+      throw new HttpError(403,'This request could not be accepted.','origin_mismatch');
+    }
+    if(path==='/config'&&request.method==='GET') return reply(RELATIONAL_CONFIG);
+    if(path==='/session'&&request.method==='GET') return reply({authenticated:await validSession(request,password)});
+    if(path==='/state'&&request.method==='GET') {
+      identity=participant(request);
+      return await forward('state',{participantId:identity.id,host:false});
+    }
+    if(path==='/search'&&request.method==='GET') {
+      identity=participant(request);
+      const query=(url.searchParams.get('q')||'').trim();
+      const round=url.searchParams.get('round')||'local';
+      if(!['local','hometown'].includes(round)) throw new HttpError(400,'Choose a valid round.','invalid_round');
+      if(query.length>120) throw new HttpError(400,'Please use a shorter place search.','invalid_search');
+      if(query.length<2) return reply({results:[],source:'photon'});
+      if(!participantSearches.check(identity.id)||!upstreamSearches.check('room')) throw new HttpError(429,'Please pause briefly before searching again.','search_rate_limited');
+      participantSearches.hit(identity.id);upstreamSearches.hit('room');
+      const result=await relationalSearch.search(query,round);
+      return reply({...result,results:await Promise.all(result.results.map(place=>signPlace(place,round,url.origin,password)))});
+    }
+    if((path==='/join'||path==='/contributions')&&request.method==='POST') {
+      const payload=await readJSON(request);identity=participant(request);
+      if(!submissions.check(identity.id)) throw new HttpError(429,'Please pause briefly before sharing again.','submit_rate_limited');
+      submissions.hit(identity.id);
+      if(path==='/contributions') payload.place=await verifiedPlace(payload.place,payload.round,url.origin,password);
+      return await forward(path==='/join'?'join':'contribute',{participantId:identity.id,payload});
+    }
+    if(path==='/contributions'&&request.method==='DELETE') {
+      identity=participant(request);
+      return await forward('remove',{participantId:identity.id,payload:{round:url.searchParams.get('round'),sessionId:url.searchParams.get('sessionId')}});
+    }
+    if(!(await validSession(request,password))) throw new HttpError(401,'Sign in to the presenter view first.','host_required');
+    identity=participant(request);
+    if(path==='/host/state'&&request.method==='GET') return await forward('state',{participantId:identity.id,host:true});
+    if((path==='/host/control'||path==='/host/contributions')&&request.method==='POST') {
+      const payload=await readJSON(request);
+      if(path==='/host/contributions') payload.place=await verifiedPlace(payload.place,payload.round,url.origin,password);
+      return await forward(path==='/host/control'?'control':'host-contribute',{participantId:identity.id,payload});
+    }
+    throw new HttpError(404,'That request could not be found.','not_found');
+  } catch(error) {
+    if(error instanceof HttpError) return reply({error:error.message,code:error.code},error.status);
+    return reply({error:'The room is temporarily unavailable. Please try again.',code:'room_unavailable'},503);
+  }
+}
+
 // Keep this exported class name, its namespace, and idFromName('class') stable.
 // v2 state lives beside legacy pin:* / count keys; deployment never clears them.
 export class Room {
@@ -385,6 +466,7 @@ export class Room {
     try {
       await this.ready;
       const path=new URL(request.url).pathname;
+      if(path.startsWith('/relational/')&&request.method==='POST') return await this.handleRelational(path.slice('/relational/'.length),await request.json());
       if(path.startsWith('/v2/')&&request.method==='POST') return await this.handleV2(path.slice(4),await request.json());
       if(path==='/add'&&request.method==='POST') {
         const pin=validPin(await request.json());
@@ -443,6 +525,40 @@ export class Room {
       this.model.restore(before);
       throw error;
     }
+  }
+
+  async handleRelational(action,input) {
+    if(!this.relationalModel) {
+      const saved=await this.ctx.storage.get(RELATIONAL_STATE_KEY);
+      const model=new RelationalRoom(RELATIONAL_CONFIG);
+      if(saved!==undefined) model.restore(saved);
+      else await this.ctx.storage.put(RELATIONAL_STATE_KEY,model.snapshot());
+      this.relationalModel=model;
+    }
+    if(!input||typeof input!=='object') throw new HttpError(400,'That request could not be read.','invalid_request');
+    const model=this.relationalModel,before=model.snapshot();
+    try {
+      const payload=input.payload||{};
+      if(action!=='state'&&payload.sessionId!==model.sessionId) {
+        throw new HttpError(409,'The presenter has started a new room. Review your place before sharing again.','room_changed');
+      }
+      let data;
+      if(action==='state') data=model.state(input.participantId,{host:input.host===true});
+      else if(action==='join') data={member:model.join(input.participantId,payload),state:model.state(input.participantId)};
+      else if(action==='contribute') data={entry:model.contribute(input.participantId,payload),state:model.state(input.participantId)};
+      else if(action==='remove') {model.remove(input.participantId,payload.round);data={state:model.state(input.participantId)};}
+      else if(action==='control') {model.control(payload.action,payload);data={state:model.state(input.participantId,{host:true})};}
+      else if(action==='host-contribute') {
+        let participantId='host-added-'+crypto.randomUUID();
+        if(payload.memberId) {
+          participantId=[...model.members].find(([,member])=>member.id===payload.memberId)?.[0];
+          if(!participantId) throw new HttpError(400,'Choose a person who has joined this room.','invalid_member');
+        }
+        data={entry:model.contribute(participantId,payload),state:model.state(input.participantId,{host:true})};
+      } else throw new HttpError(404,'That request could not be found.','not_found');
+      if(model.revision!==before.revision) await this.ctx.storage.put(RELATIONAL_STATE_KEY,model.snapshot());
+      return Response.json(data);
+    } catch(error) {model.restore(before);throw error;}
   }
 }
 export default {
