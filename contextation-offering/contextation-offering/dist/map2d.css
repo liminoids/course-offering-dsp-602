@@ -1,0 +1,30 @@
+/* The flat map shares the offering's quiet palette. Attribution remains visible. */
+.offering2d-root{position:relative;isolation:isolate;overflow:hidden;min-width:0;background:#f2edf5;color:#493a52}
+.offering2d-selection{min-height:280px;border-radius:8px;border:1px solid #d8cddd}
+.offering2d-presentation{position:absolute;inset:0;width:100%;height:100%;min-height:0}
+.offering2d-basemap{position:absolute;inset:0;z-index:0;pointer-events:none;background:#f2edf5;filter:saturate(.55) contrast(.94)}
+.offering2d-basemap-target{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.offering2d-root .offering2d-canvas{position:absolute;inset:0;z-index:1;background:transparent;font-family:inherit}
+.offering2d-basemap .ol-viewport{width:100%;height:100%;pointer-events:none}
+.offering2d-basemap canvas{display:block}
+.offering2d-root .leaflet-control-attribution{font:10px/1.6 system-ui,sans-serif;color:#53485b;background:#fffafcf2;max-width:calc(100vw - 20px);padding:2px 6px;border-radius:3px 0 0 0}
+.offering2d-root .leaflet-control-attribution a{color:#53485b;text-decoration:underline;text-underline-offset:2px}
+.offering2d-root .leaflet-bar{border:1px solid #c8b8d1;border-radius:6px;box-shadow:none;overflow:hidden}
+.offering2d-root .leaflet-bar a{background:#fffdfb;color:#51365c;border-bottom-color:#d8cddd;width:44px;height:44px;line-height:44px;text-decoration:none}
+.offering2d-root .leaflet-bar a:hover{background:#f3edf7}
+.offering2d-root .leaflet-bar a:focus-visible,.offering2d-canvas:focus-visible{outline:3px solid #9472a5;outline-offset:-3px}
+.offering2d-root .leaflet-tooltip.offering2d-label{white-space:normal;text-align:center;width:max-content;max-width:180px;border:0;border-radius:3px;box-shadow:none;background:#fffafce8;color:#503a59;padding:3px 6px;font:12px/1.35 system-ui,sans-serif;overflow-wrap:anywhere;pointer-events:none}
+.offering2d-root .offering2d-label small{font-size:11px;color:#65516e}
+.offering2d-root .offering2d-label:before{display:none}
+.offering2d-root .offering2d-origin-label{font-weight:500}
+.offering2d-message{position:absolute;z-index:800;left:12px;right:12px;top:12px;background:#fffdfbf2;border:1px solid #d8cddd;border-radius:8px;padding:12px 14px;pointer-events:auto;font:13px/1.5 system-ui,sans-serif}
+.offering2d-message[hidden]{display:none!important}.offering2d-message p{font:inherit;margin:0;color:#65576e}
+.offering2d-message button,.offering2d-center-button{font:500 12px/1.4 system-ui,sans-serif;color:#51365c;background:#fffdfb;border:1px solid #c8b8d1;border-radius:6px;padding:10px 13px;cursor:pointer;min-height:44px}
+.offering2d-message button{margin-top:9px}.offering2d-message button[hidden]{display:none!important}
+.offering2d-message button:hover,.offering2d-center-button:hover{background:#f3edf7;border-color:#9776a8}
+.offering2d-message button:focus-visible,.offering2d-center-button:focus-visible{outline:3px solid #9472a5;outline-offset:3px}
+.offering2d-center-button{position:absolute;z-index:800;left:12px;bottom:37px}
+.offering2d-unavailable .offering2d-center-button{display:none}
+.offering2d-presentation .offering2d-message{inset:auto 16px 96px auto;width:min(310px,calc(100% - 32px));max-width:310px}
+@media(max-width:600px){.offering2d-selection{min-height:250px}.offering2d-center-button{left:10px;bottom:41px}.offering2d-root .leaflet-control-attribution{max-width:calc(100vw - 40px)}.offering2d-presentation .offering2d-message{bottom:108px}}
+@media(prefers-reduced-motion:reduce){.offering2d-root *{scroll-behavior:auto;transition:none!important;animation:none!important}}

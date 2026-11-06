@@ -20,10 +20,10 @@ const BODY_LIMIT = 8192;
 
 // The join page (what classmates open on their phones) and the API it needs are open;
 // the wall at / and everything else stay behind the password.
-const PUBLIC = new Set(['/join', '/join/', '/join.html', '/join.js', '/join.css', '/app.css', '/client.js', '/map.js', '/map.css']);
+const PUBLIC = new Set(['/join', '/join/', '/join.html', '/join.js', '/join.css', '/app.css', '/client.js', '/map.js', '/map.css', '/map2d.js', '/map2d.css', '/vector-basemap.js', '/vendor/leaflet.js', '/vendor/leaflet.css', '/vendor/vector-map.js', '/vendor/ol.css']);
 // Pages that draw a map need the map library, its tiles, and the fonts; nothing else is loosened.
 const MAP_PAGES = new Set(['/', '/index.html', '/host', '/host/', '/host.html', '/join', '/join/', '/join.html']);
-const MAP_CSP = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://tiles.openfreemap.org https://unpkg.com; worker-src 'self' blob:; child-src blob:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+const MAP_CSP = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org https://unpkg.com; worker-src 'self' blob:; child-src blob:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 const KINDS = new Set(['home', 'food', 'coffee', 'park']);
 const MAX_PINS = 400;
 const SOURCE_FILES = /^\/(?:_worker\.js|_routes\.json|_headers|wrangler\.(?:jsonc?|toml)|package(?:-lock)?\.json|src|tests|\.git|\.dev\.vars|\.env)(?:\/|$)/i;
@@ -194,7 +194,9 @@ async function serveAsset(request,env,url) {
   const asset=await env.ASSETS.fetch(assetRequest);
   const headers=new Headers(asset.headers);
   for(const [name,value] of Object.entries(BASE_HEADERS)) headers.set(name,value);
-  if(MAP_PAGES.has(url.pathname)) headers.set('Content-Security-Policy',MAP_CSP);
+  if(MAP_PAGES.has(url.pathname)) {
+    headers.set('Content-Security-Policy',MAP_CSP);
+  }
   headers.delete('ETag');headers.delete('Last-Modified');
   return new Response(asset.body,{status:asset.status,statusText:asset.statusText,headers});
 }

@@ -58,6 +58,6 @@ Within the canonical application:
 - `src/worker.js`: password gate, API routing, and Durable Object integration.
 - Other `src/` modules: room rules, search, and configuration.
 
-Map imagery comes from OpenFreeMap, rendered by MapLibre GL JS. Live place search uses Photon. Internet access is required for geographic resources. A WebGL2-capable browser is needed for the 3D map; search and the presenter's text list remain available when rendering is unavailable. The visual map and projector should be rehearsed on the presentation computer before class.
+The 3D map uses MapLibre GL JS and OpenFreeMap. If a browser cannot start that renderer, the participant and presenter maps automatically use an interactive 2D map of the same OpenFreeMap data. That fallback combines Leaflet 1.9.4 controls and overlays with OpenLayers 10.11.0 and ol-mapbox-style 13.9.0 Canvas rendering; these libraries are bundled locally with their licenses. Selection, places, threads, and the shared presentation clock remain available; the final view is a flat world map on those devices. The 3D buildings and rotating globe still require WebGL2. Provider attribution remains visible. Live place search uses Photon, and geographic resources require internet access. The map and projector should be rehearsed on the presentation computer before class.
 
 The earlier standalone Node example is a local development reference. Its `npm run dev` server is not the deployed Cloudflare runtime.

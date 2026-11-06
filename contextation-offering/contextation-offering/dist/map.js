@@ -203,7 +203,7 @@ function motionPreference() {
   return typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 }
 
-function createSurface(container, { config, interactive, onStatus, onReady, onDispose }) {
+function createSurface(container, { config, interactive, onStatus, onReady, onDispose, onUnavailable }) {
   const root = typeof container === 'string' ? document.querySelector(container) : container;
   if (!root) throw new Error('A map container is required.');
   root.classList.add('offering-map-root', interactive ? 'offering-map--selection' : 'offering-map--presentation');
@@ -230,6 +230,15 @@ function createSurface(container, { config, interactive, onStatus, onReady, onDi
     if (error) diagnose('unavailable', error);
     ready = false; clearTimeout(loadTimer); onDispose?.();
     if (map) { try { map.remove(); } catch {} map = null; }
+    if (onUnavailable) {
+      // The public facade replaces this surface with a map that does not need
+      // WebGL. Do not tell participants to leave their browser in the meantime.
+      heading.textContent = 'Opening the map…'; detail.textContent = '';
+      retry.hidden = true; message.hidden = false;
+      root.classList.remove('offering-map--unavailable');
+      onUnavailable(error);
+      return;
+    }
     const reason = String(error?.message || error || '');
     const rendererUnavailable = /webgl|gpu|graphics context|map renderer/i.test(reason);
     const resourceUnavailable = /fetch|network|could not load|failed to load|took too long|finish loading/i.test(reason);
@@ -332,12 +341,12 @@ function addSelectionLayers(map, config) {
   map.addLayer({ id: 'offering-boundary-line', type: 'line', source: 'offering-boundary', paint: { 'line-color': COLORS.line, 'line-width': 1.5, 'line-dasharray': [4, 4], 'line-opacity': 0.55 } });
 }
 
-export async function createSelectionMap(container, { config: rawConfig = {}, round: initialRound = 'local', onSelect, onStatus } = {}) {
+async function createSelectionMap3D(container, { config: rawConfig = {}, round: initialRound = 'local', onSelect, onStatus, onUnavailable } = {}) {
   const config = settings(rawConfig), preference = motionPreference();
   let round = ['hometown', 'global', 'home'].includes(initialRound) ? 'hometown' : 'local';
   let selection = null, marker = null, centerButton = null;
   const surface = createSurface(container, {
-    config, interactive: true, onStatus,
+    config, interactive: true, onStatus, onUnavailable,
     onDispose() { marker = null; },
     onReady(map, library) {
       tintBasemap(map); addSelectionLayers(map, config);
@@ -534,7 +543,7 @@ function globalCenter(center, homes) {
   return [Math.atan2(vector[1], vector[0]) / RAD, clamp(Math.atan2(vector[2], Math.hypot(vector[0], vector[1])) / RAD, -55, 55)];
 }
 
-export async function createPresentationMap(container, { config: rawConfig = {}, onStatus } = {}) {
+async function createPresentationMap3D(container, { config: rawConfig = {}, onStatus, onUnavailable } = {}) {
   const config = settings(rawConfig), preference = motionPreference();
   let state = { phase: 'local_open', entries: [], clock: {} };
   let entries = { local: [], hometown: [] }, signature = '', paths = new Map();
@@ -544,7 +553,7 @@ export async function createPresentationMap(container, { config: rawConfig = {},
   let baseLabels = [], baseLabelsHidden = null, homePoseCache = null;
   let lastSceneKey = '';
   const surface = createSurface(container, {
-    config, interactive: false, onStatus,
+    config, interactive: false, onStatus, onUnavailable,
     onDispose() { cancelAnimationFrame(raf); raf = 0; lastSceneKey = ''; homePoseCache = null; },
     onReady(map) {
       baseLabels = (map.getStyle().layers || []).filter(layer => layer.type === 'symbol' && layer.layout?.['text-field'])
@@ -749,5 +758,142 @@ export async function createPresentationMap(container, { config: rawConfig = {},
       cancelAnimationFrame(raf); preference.removeEventListener?.('change', onMotionChange);
       document.removeEventListener('visibilitychange', onVisibility); surface.destroy();
     },
+  };
+}
+
+/**
+ * Keep the same page API while changing renderer. In particular, the caller can
+ * change rounds or receive a room update while either map library is loading.
+ * The previous map's canvas, observers, event handlers and animation are removed
+ * before the flat map starts; the selected place and shared clock are retained.
+ */
+function resilientMap(container, options, create3D, fallbackExport, restore) {
+  const root = typeof container === 'string' ? document.querySelector(container) : container;
+  if (!root) throw new Error('A map container is required.');
+  let active = null, initializing3D = true, fallbackRequested = false;
+  let fallbackStarted = false, destroyed = false, fallbackError = null;
+  const notify = (message, detail) => {
+    if (destroyed) return;
+    try { options.onStatus?.(message, detail); } catch { /* Status is an optional view. */ }
+  };
+  function dispose(instance) {
+    try { instance?.destroy?.(); } catch { /* Finish replacing an incomplete renderer. */ }
+  }
+  function requestFallback() {
+    if (destroyed || fallbackRequested) return;
+    fallbackRequested = true;
+    notify('Opening the map…', { state: 'loading', available: false, ready: false, renderer: '2d' });
+    // A constructor can fail before its asynchronous factory has returned its
+    // cleanup handle. Wait for that handle instead of leaving its DOM behind.
+    if (!initializing3D) void startFallback();
+  }
+  function showFallbackError() {
+    fallbackError?.remove();
+    const message = document.createElement('div'); message.className = 'offering-map-message'; message.setAttribute('role', 'status');
+    const title = document.createElement('p'); title.className = 'offering-map-message-title'; title.textContent = 'Map unavailable';
+    const detail = document.createElement('p'); detail.className = 'offering-map-message-detail';
+    detail.textContent = fallbackExport === 'createSelectionMap2D' ? 'Use search, or retry the map.' : 'The places remain listed. You can retry the map.';
+    const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'offering-map-retry'; retry.textContent = 'Try map again';
+    retry.addEventListener('click', () => { if (!destroyed) void startFallback(); });
+    message.append(title, detail, retry); root.append(message); fallbackError = message;
+    notify('Map unavailable.' + (fallbackExport === 'createSelectionMap2D' ? ' Search remains available.' : ' The place list remains available.'),
+      { state: 'unavailable', available: false, ready: false, renderer: '2d' });
+  }
+  async function startFallback() {
+    if (destroyed || fallbackStarted) return;
+    fallbackStarted = true;
+    dispose(active); active = null;
+    fallbackError?.remove(); fallbackError = null;
+    root.classList.remove('offering-map--unavailable');
+    notify('Opening the map…', { state: 'loading', available: false, ready: false, renderer: '2d' });
+    try {
+      const module = await import('./map2d.js');
+      if (destroyed) return;
+      const next = await module[fallbackExport](root, { ...options, onStatus: notify });
+      if (destroyed) { dispose(next); return; }
+      active = next;
+      restore(active);
+      active.resize?.();
+    } catch {
+      if (destroyed) return;
+      dispose(active); active = null;
+      fallbackStarted = false;
+      showFallbackError();
+    }
+  }
+  async function start() {
+    let next = null;
+    try {
+      next = await create3D(root, {
+        ...options,
+        onUnavailable: requestFallback,
+        onStatus(message, detail) {
+          if (!fallbackRequested) notify(message, { ...detail, renderer: '3d' });
+        },
+      });
+    } catch { requestFallback(); }
+    initializing3D = false;
+    if (destroyed) { dispose(next); return; }
+    if (fallbackRequested) { dispose(next); await startFallback(); return; }
+    active = next;
+    try { restore(active); } catch { requestFallback(); }
+  }
+  return {
+    start,
+    call(method, ...args) {
+      if (destroyed || !active) return;
+      try { active[method]?.(...args); }
+      catch {
+        if (!fallbackRequested) requestFallback();
+        else notify('Map unavailable. The place list remains available.', { state: 'unavailable', available: false, ready: false, renderer: '2d' });
+      }
+    },
+    destroy() {
+      destroyed = true;
+      dispose(active); active = null;
+      fallbackError?.remove(); fallbackError = null;
+    },
+  };
+}
+
+/** Interactive map, with a compatible flat map on devices without WebGL2. */
+export async function createSelectionMap(container, options = {}) {
+  const normalizedRound = value => ['hometown', 'global', 'home'].includes(value) ? 'hometown' : 'local';
+  let round = normalizedRound(options.round), selection = null;
+  const rendererOptions = {
+    ...options, round,
+    onSelect(place) { selection = cleanPlace(place); options.onSelect?.(place); },
+  };
+  const surface = resilientMap(container, rendererOptions, createSelectionMap3D, 'createSelectionMap2D', map => {
+    map.setRound?.(round); map.setSelection?.(selection);
+  });
+  const setSelection = place => { selection = cleanPlace(place); surface.call('setSelection', selection); };
+  void surface.start();
+  return {
+    setRound(next) {
+      const value = normalizedRound(next);
+      if (value === round) return;
+      round = value; rendererOptions.round = round; selection = null; surface.call('setRound', round);
+    },
+    setSelection,
+    setPlace: setSelection,
+    resize: () => surface.call('resize'),
+    destroy: () => surface.destroy(),
+  };
+}
+
+/** Shared presentation, preserving the server clock across renderer fallback. */
+export async function createPresentationMap(container, options = {}) {
+  let state = null, paused = false;
+  const surface = resilientMap(container, options, createPresentationMap3D, 'createPresentationMap2D', map => {
+    if (state) map.update?.(state);
+    if (paused) map.pause?.(true);
+  });
+  void surface.start();
+  return {
+    update(next) { if (!next || typeof next !== 'object') return; state = next; surface.call('update', state); },
+    pause(next = true) { paused = Boolean(next); surface.call('pause', paused); },
+    resize: () => surface.call('resize'),
+    destroy: () => surface.destroy(),
   };
 }

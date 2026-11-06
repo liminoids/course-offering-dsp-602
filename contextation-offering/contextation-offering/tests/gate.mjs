@@ -21,7 +21,7 @@ await test('missing or weak secrets fail closed',async()=>{
   }
 });
 await test('every anonymous path is protected',async()=>{
-  for(const path of ['/','/index.html','/styles.css','/favicon.ico','/missing','/_worker.js']){
+  for(const path of ['/','/index.html','/host','/host.js','/styles.css','/favicon.ico','/missing','/_worker.js','/vendor/private.js']){
     const before=assetCalls;
     const r=await run(req(path));
     assert.equal(r.status,303);assert.ok(r.headers.get('location').startsWith('/_gate/login?'));assert.equal(assetCalls,before);
@@ -113,7 +113,7 @@ await test('login and logout forms use appropriate referrer policy',async()=>{
   for(const path of ['/_gate/login','/_gate/logout']){
     const r=await run(req(path));assert.equal(r.status,200);assert.equal(r.headers.get('referrer-policy'),'same-origin');
   }
-  const r=await run(req('/',cookie));assert.equal(r.headers.get('referrer-policy'),'no-referrer');
+  const r=await run(req('/styles.css',cookie));assert.equal(r.headers.get('referrer-policy'),'no-referrer');
 });
 // ── the join page, the pins API and the room (added with the map pages) ──
 import {Room} from '../src/worker.js';
@@ -132,7 +132,7 @@ function memoryRoom(){
 const roomEnv={...env,ROOM:memoryRoom()};
 const postJSON=(path,body,headers={})=>new Request(origin+path,{method:'POST',headers:{'Content-Type':'application/json','Origin':origin,...headers},body:JSON.stringify(body)});
 await test('join page and its files are open without a session',async()=>{
-  for(const path of ['/join','/join.js','/join.css']){
+  for(const path of ['/join','/join.js','/join.css','/map2d.js','/map2d.css','/vector-basemap.js','/vendor/leaflet.js','/vendor/leaflet.css','/vendor/vector-map.js','/vendor/ol.css']){
     const before=assetCalls;
     const r=await run(req(path));
     assert.equal(r.status,200);assert.equal(assetCalls,before+1);assert.match(r.headers.get('cache-control'),/no-store/);
@@ -145,6 +145,25 @@ await test('the wall page gets the map policy only once signed in',async()=>{
   assert.equal((await run(req('/'))).status,303);
   assert.match((await run(req('/',cookie))).headers.get('content-security-policy'),/cdnjs\.cloudflare\.com/);
   assert.doesNotMatch((await run(req('/styles.css',cookie))).headers.get('content-security-policy'),/cdnjs/);
+});
+await test('map documents allow only the declared tile image host and suppress referrers',async()=>{
+  for(const [path,sessionCookie] of [['/join',''],['/join/',''],['/join.html',''],['/',cookie],['/host',cookie]]) {
+    const r=await run(req(path,sessionCookie));
+    assert.equal(r.status,200);
+    assert.equal(r.headers.get('referrer-policy'),'no-referrer');
+    const csp=r.headers.get('content-security-policy');
+    const imageSources=csp.match(/(?:^|;)\s*img-src\s+([^;]+)/)[1].trim().split(/\s+/);
+    assert.deepEqual(imageSources,["'self'",'data:','blob:','https://tiles.openfreemap.org']);
+    assert.doesNotMatch(csp,/wasm-unsafe-eval|unsafe-eval|\*/);
+    assert.doesNotMatch(csp,/tile\.openstreetmap\.org|cdn\.jsdelivr\.net/);
+    assert.match(csp,/script-src 'self' https:\/\/cdnjs\.cloudflare\.com https:\/\/unpkg\.com;/);
+  }
+  for(const path of ['/map2d.js','/map2d.css','/vector-basemap.js','/vendor/leaflet.js','/vendor/leaflet.css','/vendor/vector-map.js','/vendor/ol.css']) {
+    const r=await run(req(path));
+    assert.equal(r.headers.get('referrer-policy'),'no-referrer');
+    assert.doesNotMatch(r.headers.get('content-security-policy'),/tile\.openstreetmap\.org/);
+    assert.equal((await run(req(path,'',{method:'POST'}))).status,405);
+  }
 });
 await test('phones can add a pin; junk is refused',async()=>{
   const ok=await run(postJSON('/api/pin',{phase:'local',place:'Thornden Park',who:'sample',kind:'park',lng:-76.1264,lat:43.0419,pid:'abcdef1234'}),roomEnv);
